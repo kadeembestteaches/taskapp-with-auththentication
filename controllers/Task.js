@@ -3,16 +3,17 @@
 const express = require('express')
 const router = express.Router();
 const taskModel  = require("../models/Task");
+const isAuthenticated = require("../middleware/auth");
 
 
 //Route to direct use to Add Task form
-router.get("/add",(req,res)=>
+router.get("/add",isAuthenticated,(req,res)=>
 {
     res.render("Task/taskAddForm");
 });
 
 //Route to process user's request and data when the user submits the add task form
-router.post("/add",(req,res)=>
+router.post("/add",isAuthenticated,(req,res)=>
 {
         const newUser = {
             title : req.body.title,
@@ -38,7 +39,7 @@ router.post("/add",(req,res)=>
 });
 
 ////Route to fetch all tasks
-router.get("/list",(req,res)=>
+router.get("/list",isAuthenticated,(req,res)=>
 {
     //pull from the database , get the results that was returned and then inject that results into
     //the taskDashboard
@@ -80,7 +81,7 @@ router.get("/list",(req,res)=>
 });
 
 //Route to direct user to the task profile page
-router.get("/description",(req,res)=>{
+router.get("/description",isAuthenticated,(req,res)=>{
 
     
 

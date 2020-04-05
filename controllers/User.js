@@ -3,6 +3,9 @@ const express = require('express')
 const router = express.Router();
 const userModel = require("../models/User");
 const path = require("path");
+const bcrypt = require("bcryptjs");
+const isAuthenticated = require("../middleware/auth");
+const dashBoardLoader = require("../middleware/authorization");
 
 
 //Route to direct use to Registration form
@@ -37,7 +40,7 @@ router.post("/register",(req,res)=>
                 profilePic: req.files.profilePic.name
             })
             .then(()=>{
-                res.redirect(`/user/profile/${user._id}`)
+                res.redirect(`/user/login`)
             })
 
         })
@@ -59,29 +62,66 @@ router.get("/login",(req,res)=>
 router.post("/login",(req,res)=>
 {
 
-    res.redirect("/user/profile/")
+    userModel.findOne({email:req.body.email})
+    .then(user=>{
+
+        const errors= [];
+
+        //email not found
+        if(user==null)
+        {
+            errors.push("Sorry, your email and/or password incorrect");
+            res.render("User/login",{
+                errors
+            })
+                
+        }
+
+        //email is found
+        else
+        {
+            bcrypt.compare(req.body.password, user.password)
+            .then(isMatched=>{
+                
+                if(isMatched)
+                {
+                    //cretae our sessoin
+                    req.session.userInfo = user;
+                   
+                    res.redirect("/user/profile");
+                }
+
+                else
+                {
+                    errors.push("Sorry, your email and/or password incorrect ");
+                    res.render("User/login",{
+                        errors
+                    })
+                }
+
+            })
+            .catch(err=>console.log(`Error ${err}`));
+        }
+
+
+    })
+    .catch(err=>console.log(`Error ${err}`));
+    
 });
 
 
 
-router.get("/profile/:id",(req,res)=>{
+router.get("/profile",isAuthenticated,dashBoardLoader);
 
 
-    userModel.findById(req.params.id)
-    .then((user)=>{
 
-        const {profilePic} =user;
 
-        res.render("User/userDashboard",{
-            profilePic
-        });
+router.get("/logout",(req,res)=>{
 
-    })
-    .catch(err=>console.log(`Error :${err}`))
-
+    req.session.destroy();
+    res.redirect("/user/login")
     
 })
-
 
 
 module.exports=router;
